@@ -1,16 +1,17 @@
 import * as React from 'react';
-import { Route } from 'react-router';
-import Layout from './components/Layout';
-import Home from './components/Home';
-import Counter from './components/Counter';
-import FetchData from './components/FetchData';
-
-import './custom.css'
+import { Route, Switch } from 'react-router';
+import LayoutBs from './components/Layout';
+import HomeBs from './components/Home';
+import CounterBs from './components/Counter';
+import FetchDataBs from './components/FetchData';
+import Home from './screens/Home';
+import { ThemeProvider } from '@material-ui/core';
+import { applicationMuiLightTheme } from './util/Theme';
 
 export default () => (
-    <Layout>
-        <Route exact path='/' component={Home} />
-        <Route path='/counter' component={Counter} />
-        <Route path='/fetch-data/:startDateIndex?' component={FetchData} />
-    </Layout>
+    <ThemeProvider theme={applicationMuiLightTheme}>
+        <Switch>
+            <Route exact path='/' component={Home}></Route>
+        </Switch>
+    </ThemeProvider>
 );
