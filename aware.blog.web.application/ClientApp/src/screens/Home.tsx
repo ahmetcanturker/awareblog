@@ -1,18 +1,14 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import CssBaseline from '@material-ui/core/CssBaseline';
 import Grid from '@material-ui/core/Grid';
-import Container from '@material-ui/core/Container';
 import GitHubIcon from '@material-ui/icons/GitHub';
 import FacebookIcon from '@material-ui/icons/Facebook';
 import TwitterIcon from '@material-ui/icons/Twitter';
-import Header from '../components/Header';
 import FeaturedPost from '../components/FeaturedPost';
 import GridPost from '../components/GridPost';
 import Main from '../components/Main';
 import Sidebar, { SidebarProps } from '../components/Sidebar';
-import Footer from '../components/Footer';
-import { featuredPost, postList } from '../data/MockPosts';
+import { posts } from '../data/MockPosts';
 
 const useStyles = makeStyles((theme) => ({
     mainGrid: {
@@ -48,28 +44,21 @@ export default function Home() {
 
     return (
         <React.Fragment>
-            <CssBaseline />
-            <Container maxWidth="lg">
-                <Header title="Aware Blog" />
-                <main>
-                    <FeaturedPost post={featuredPost} />
-                    <Grid container spacing={4}>
-                        {postList.map((post) => (
-                            <GridPost key={post.title} post={post} />
-                        ))}
-                    </Grid>
-                    <Grid container spacing={5} className={classes.mainGrid}>
-                        <Main title="From the firehose" posts={postList} />
-                        <Sidebar
-                            title={sidebar.title}
-                            description={sidebar.description}
-                            archives={sidebar.archives}
-                            social={sidebar.social}
-                        />
-                    </Grid>
-                </main>
-            </Container>
-            <Footer title="Aware Blog" description="Blog olsun diye..." />
-        </React.Fragment>
+            <FeaturedPost post={posts[0]} />
+            <Grid container spacing={4}>
+                {posts.slice(1).map((post, i) => (
+                    <GridPost key={i} post={post} />
+                ))}
+            </Grid>
+            <Grid container spacing={5} className={classes.mainGrid}>
+                <Main title="From the firehose" posts={posts} />
+                <Sidebar
+                    title={sidebar.title}
+                    description={sidebar.description}
+                    archives={sidebar.archives}
+                    social={sidebar.social}
+                />
+            </Grid>
+        </React.Fragment >
     );
 }

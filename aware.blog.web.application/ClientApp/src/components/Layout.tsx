@@ -1,12 +1,24 @@
-import * as React from 'react';
-import { Container } from 'reactstrap';
-import NavMenu from './NavMenu';
+import React, { PropsWithChildren } from 'react';
+import CssBaseline from '@material-ui/core/CssBaseline';
+import Container from '@material-ui/core/Container';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 
-export default (props: { children?: React.ReactNode }) => (
-    <React.Fragment>
-        <NavMenu/>
-        <Container>
-            {props.children}
-        </Container>
-    </React.Fragment>
-);
+type LayoutProps = PropsWithChildren<{
+
+}>;
+
+export default function Layout(props: LayoutProps) {
+    return (
+        <React.Fragment>
+            <CssBaseline />
+            <Container maxWidth="lg">
+                <Header title="Aware Blog" />
+                <main>
+                    {props.children}
+                </main>
+            </Container>
+            <Footer title="Aware Blog" description="Blog olsun diye..." />
+        </React.Fragment>
+    );
+}
