@@ -1,64 +1,181 @@
 import React from 'react';
-import { makeStyles } from '@material-ui/core/styles';
+import { withStyles, WithStyles, createStyles, Theme } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
-import GitHubIcon from '@material-ui/icons/GitHub';
-import FacebookIcon from '@material-ui/icons/Facebook';
-import TwitterIcon from '@material-ui/icons/Twitter';
+import Typography from '@material-ui/core/Typography';
+import Divider from '@material-ui/core/Divider';
 import FeaturedPost from '../components/FeaturedPost';
-import GridPost from '../components/GridPost';
 import Main from '../components/Main';
-import Sidebar, { SidebarProps } from '../components/Sidebar';
-import { posts } from '../data/MockPosts';
+import Sidebar, { SidebarProps, DefaultSidebarOptions } from '../components/Sidebar';
+import { getBlogPosts, GetBlogPostsResponse } from '../services/BlogPostService';
+import { Nullable, int } from '../util/Types';
+import Button from '@material-ui/core/Button';
+import { BlogPost } from '../contract/dto/BlogPost';
+import { RouteComponentProps } from 'react-router';
+import { Link as RouterLink } from 'react-router-dom';
+import { parseQueryString, buildQueryParameterString } from '../util/HttpUtilities';
+import { ApplicationState } from '../store';
+import * as ArchiveStore from '../store/Archive';
+import * as BlogStore from '../store/Blog';
+import { connect } from 'react-redux';
+import { AppRoutes } from '../util/Routes';
 
-const useStyles = makeStyles((theme) => ({
+const styles = (theme: Theme) => createStyles({
+    container: {
+        display: 'flex',
+        paddingTop: theme.spacing(3)
+    },
     mainGrid: {
         marginTop: theme.spacing(3),
+        marginBottom: theme.spacing(3)
     },
-}));
+    previousButton: {
 
-const sidebar: SidebarProps = {
-    title: 'About',
-    description: 'Etiam porta sem malesuada magna mollis euismod. Cras mattis consectetur purus sit amet fermentum. Aenean lacinia bibendum nulla sed consectetur.',
-    archives: [
-        { title: 'March 2020', url: '#' },
-        { title: 'February 2020', url: '#' },
-        { title: 'January 2020', url: '#' },
-        { title: 'November 1999', url: '#' },
-        { title: 'October 1999', url: '#' },
-        { title: 'September 1999', url: '#' },
-        { title: 'August 1999', url: '#' },
-        { title: 'July 1999', url: '#' },
-        { title: 'June 1999', url: '#' },
-        { title: 'May 1999', url: '#' },
-        { title: 'April 1999', url: '#' },
-    ],
-    social: [
-        { name: 'GitHub', icon: GitHubIcon },
-        { name: 'Twitter', icon: TwitterIcon },
-        { name: 'Facebook', icon: FacebookIcon },
-    ],
+    },
+    nextButton: {
+        marginLeft: 'auto'
+    },
+    divider: {
+        marginBottom: theme.spacing(1)
+    }
+});
+
+type HomeProps =
+    ArchiveStore.ArchiveState &
+    BlogStore.BlogState &
+    typeof ArchiveStore.actionCreators &
+    typeof BlogStore.actionCreators &
+    WithStyles<typeof styles> &
+    RouteComponentProps & {
+
+    };
+
+type HomeState = {
+    pageIndex: Nullable<int>;
+    pageLength: int;
+    loading: boolean;
+    response: Nullable<GetBlogPostsResponse>;
+    blogPosts: BlogPost[];
 };
 
-export default function Home() {
-    const classes = useStyles();
+class Home extends React.Component<HomeProps, HomeState> {
+    constructor(props: HomeProps) {
+        super(props);
 
-    return (
-        <React.Fragment>
-            <FeaturedPost post={posts[0]} />
-            <Grid container spacing={4}>
-                {posts.slice(1).map((post, i) => (
-                    <GridPost key={i} post={post} />
-                ))}
-            </Grid>
-            <Grid container spacing={5} className={classes.mainGrid}>
-                <Main title="From the firehose" posts={posts} />
-                <Sidebar
-                    title={sidebar.title}
-                    description={sidebar.description}
-                    archives={sidebar.archives}
-                    social={sidebar.social}
-                />
-            </Grid>
-        </React.Fragment >
-    );
+        this.state = {
+            pageIndex: null,
+            pageLength: 10,
+            loading: false,
+            response: null,
+            blogPosts: []
+        };
+    }
+
+    async componentDidMount() {
+        await this.fetchArchives();
+        await this.fetchFeaturedBlogPost();
+        await this.fetchData();
+    }
+
+    async componentDidUpdate() {
+        await this.fetchData();
+    }
+
+    async fetchArchives() {
+        if (this.props.archives !== null) {
+            return;
+        }
+
+        this.props.requestArchives();
+    }
+
+    async fetchFeaturedBlogPost() {
+        if (this.props.featuredPost !== null) {
+            return;
+        }
+
+        this.props.requestFeaturedBlogPost();
+    }
+
+    async fetchData() {
+        if (this.state.loading) {
+            return;
+        }
+
+        let queryParameters = parseQueryString<{ pageIndex: number; }>(this.props.location.search);
+
+        let pageIndex = !isNaN(queryParameters.pageIndex) ? queryParameters.pageIndex : 0;
+
+        if (pageIndex === this.state.pageIndex) {
+            return;
+        }
+
+        this.setState({
+            loading: true,
+            response: null,
+            pageIndex: pageIndex
+        });
+
+        let response = await getBlogPosts(pageIndex, this.state.pageLength);
+
+        this.setState({
+            loading: false,
+            response: response,
+            blogPosts: response.success ? response.data : []
+        });
+    }
+
+    public render() {
+        const { classes } = this.props;
+
+        return (
+            <React.Fragment>
+                <FeaturedPost post={!this.props.loadingFeaturedPost ? this.props.featuredPost : null} />
+                <Grid container spacing={5} className={classes.mainGrid}>
+                    <Grid item xs={12}>
+                        <Typography variant="h6" gutterBottom>
+                            Awareblog
+                        </Typography>
+                        <Divider className={classes.divider} />
+                    </Grid>
+                    <Main posts={!this.state.loading ? this.state.blogPosts : [null, null, null]}>
+                        {!this.state.loading && this.state.response && this.state.response.success && (
+                            <div className={classes.container}>
+                                {((this.state.pageIndex || 0) > 0) && (
+                                    <Button
+                                        color="primary"
+                                        className={classes.previousButton}
+                                        component={RouterLink}
+                                        to={AppRoutes.home((this.state.pageIndex || 0) - 1)}
+                                    >
+                                        ÖNCEKİ SAYFA
+                                    </Button>
+                                )}
+                                {(((this.state.pageIndex || 0) + 1) * this.state.pageLength < this.state.response.totalCount) && (
+                                    <Button
+                                        color="primary"
+                                        className={classes.nextButton}
+                                        component={RouterLink}
+                                        to={AppRoutes.home((this.state.pageIndex || 0) + 1)}
+                                    >
+                                        SONRAKİ SAYFA
+                                    </Button>
+                                )}
+                            </div>
+                        )}
+                    </Main>
+                    <Sidebar
+                        title={DefaultSidebarOptions.title}
+                        description={DefaultSidebarOptions.description}
+                        archives={!this.props.loadingArchives ? this.props.archives : [null, null]}
+                        social={DefaultSidebarOptions.social}
+                    />
+                </Grid>
+            </React.Fragment>
+        );
+    }
 }
+
+export default connect(
+    (state: ApplicationState) => ({ ...state.archive, ...state.blog }),
+    { ...ArchiveStore.actionCreators, ...BlogStore.actionCreators }
+)(withStyles(styles)(Home) as any);

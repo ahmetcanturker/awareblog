@@ -3,17 +3,26 @@ import CssBaseline from '@material-ui/core/CssBaseline';
 import Container from '@material-ui/core/Container';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { makeStyles } from '@material-ui/core/styles';
+
+const useStyles = makeStyles((theme) => ({
+    container: {
+        paddingTop: theme.spacing(4)
+    }
+}));
 
 type LayoutProps = PropsWithChildren<{
 
 }>;
 
 export default function Layout(props: LayoutProps) {
+    const classes = useStyles();
+
     return (
         <React.Fragment>
             <CssBaseline />
-            <Container maxWidth="lg">
-                <Header title="Aware Blog" />
+            <Header title="Aware Blog" />
+            <Container maxWidth="lg" className={classes.container}>
                 <main>
                     {props.children}
                 </main>
