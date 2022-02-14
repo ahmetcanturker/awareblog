@@ -9,6 +9,7 @@
     <DefaultItemExcludes>$(DefaultItemExcludes);$(SpaRoot)node_modules\**</DefaultItemExcludes>
     <AssemblyName>Aware.Blog.Web.Application</AssemblyName>
     <RootNamespace>Aware.Blog.Web.Application</RootNamespace>
+    <UserSecretsId>bb08a8ca-a4db-4b1c-bd7a-c03589f3f04a</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
